@@ -16,6 +16,12 @@ with conn:
                                            currency text NOT NULL
                                        )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS messages (
+                                           user text PRIMARY KEY,
+                                           messageid text NOT NULL,
+                                           channelid text NOT NULL
+                                       )""")
+
 bot = commands.Bot(                         # Create a new bot
     command_prefix='!',                     # Set the prefix
     description='Sijoitustarkkailija',  # Set a description for the bot

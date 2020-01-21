@@ -9,8 +9,6 @@ class Basic(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.msg = {}
-        self.started = False
 
     @commands.command(
         name='list',
@@ -34,10 +32,8 @@ class Basic(commands.Cog):
     async def value_command(self, ctx):
         username = str(ctx.message.author)
         text = getValueText(username)
-        self.msg[username] = await ctx.send(content='```'+text+'```')
-        if self.started == False:
-            await self.updatevalue()
-            self.started = True
+        message = await ctx.send(content='```'+text+'```')
+        setUserMessage(username, message)
 
     async def updatevalue(self):
         await self.bot.wait_until_ready()
@@ -94,6 +90,14 @@ class Basic(commands.Cog):
             await ctx.send(content='Käytä muotoa Tunnus nimi määrä ostoarvo valuutta esim. MSFT Microsofti 1 15.4 USD')
             return
         return
+
+def setUserMessage(username, message):
+    mid = str(message.id)
+    gid = str(message.guild)
+    with conn:
+        cur = conn.cursor()
+        cur.execute("INSERT or REPLACE INTO messages (user, messageid, channelid) VALUES (?, ?, ?)", (username, mid, gid))
+
 
 def getValueText(username):
     stockAmount = {}
