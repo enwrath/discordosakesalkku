@@ -9,6 +9,7 @@ class Basic(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.bot.loop.create_task(self.updatevalue())
 
     @commands.command(
         name='list',
@@ -36,13 +37,22 @@ class Basic(commands.Cog):
         setUserMessage(username, message)
 
     async def updatevalue(self):
+        print("here we are")
         await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
+        while True:#not self.bot.is_closed:
+            print("Oh yeah")
+            with conn:
+                cur = conn.cursor()
+                for row in cur.execute('SELECT * from messages'):
+                    print(row)
+                    await self.updateUserValue(row[0], row[1], row[2])
             await asyncio.sleep(3600)
-            for username in self.msg:
-                text = getValueText(username)
-                print("Updating for",username)
-                await self.msg[username].edit(content='```'+text+'```')
+
+    async def updateUserValue(self, username, messageid, channelid):
+        message = await self.bot.get_channel(int(channelid)).fetch_message(int(messageid))
+        text = getValueText(username)
+        print("Updating for",username)
+        await message.edit(content='```'+text+'```')
 
 
     # Define a new command
@@ -93,10 +103,10 @@ class Basic(commands.Cog):
 
 def setUserMessage(username, message):
     mid = str(message.id)
-    gid = str(message.guild)
+    cid = str(message.channel.id)
     with conn:
         cur = conn.cursor()
-        cur.execute("INSERT or REPLACE INTO messages (user, messageid, channelid) VALUES (?, ?, ?)", (username, mid, gid))
+        cur.execute("INSERT or REPLACE INTO messages (user, messageid, channelid) VALUES (?, ?, ?)", (username, mid, cid))
 
 
 def getValueText(username):
