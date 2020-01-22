@@ -14,16 +14,34 @@ class Basic(commands.Cog):
     @commands.command(
         name='list',
         description='List all  purchases',
+        aliases=['ostot','lista'],
     )
     async def list_command(self, ctx):
-        text = 'Osake  Määrä  Ostoarvo\n'
+        text = '{:10s} {:10s} {:10s} {:10s}\n'.format('Id', 'Osake', 'Määrä', 'Ostoarvo')
         with conn:
             cur = conn.cursor()
-            for row in cur.execute('SELECT stock, amount, price from Purchases WHERE user=?', (str(ctx.message.author),)):
-                for item in row:
-                    text += str(item) + ' '
-                text += '\n'
-        await ctx.send(content=text)
+            for row in cur.execute('SELECT id, stock, amount, price from Purchases WHERE user=?', (str(ctx.message.author),)):
+                text += '{:<10d} {:<10s} {:<10.2f} {:<10.2f}\n'.format(row[0], row[1], row[2], row[3])
+        await ctx.send(content='```'+text+'```')
+
+    @commands.command(
+        name='unbuy',
+        description='Unbuy purchased stock',
+        aliases=['peru', 'myy', 'epäosta'],
+    )
+    async def unbuy_command(self, ctx):
+        msg = ctx.message.content
+
+        prefix_used = ctx.prefix
+        alias_used = ctx.invoked_with
+        text = msg[len(prefix_used) + len(alias_used)+1:]
+        try:
+            id = int(text)
+            with conn:
+                cur = conn.cursor()
+                cur.execute('DELETE FROM purchases WHERE id=? AND user=?', (id, str(ctx.message.author),))
+        except:
+            await ctx.send(content='Anna ostotapahtuman id numerona.  Esim. !peru 1 . Tapahtumien id:t saat komennolla !ostot')
 
     @commands.command(
         name='value',
