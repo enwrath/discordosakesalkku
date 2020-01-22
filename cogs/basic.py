@@ -37,10 +37,8 @@ class Basic(commands.Cog):
         setUserMessage(username, message)
 
     async def updatevalue(self):
-        print("here we are")
         await self.bot.wait_until_ready()
         while True:#not self.bot.is_closed:
-            print("Oh yeah")
             with conn:
                 cur = conn.cursor()
                 for row in cur.execute('SELECT * from messages'):
@@ -115,7 +113,13 @@ def getValueText(username):
     names = {}
     currencies = {}
     totalprofit = 0.0
+    d1totalprofit = 0.0
+    d7totalprofit = 0.0
+    d30totalprofit = 0.0
     totalvalue = 0.0
+    d1totalvalue = 0.0
+    d7totalvalue = 0.0
+    d30totalvalue = 0.0
     with conn:
         cur = conn.cursor()
         for row in cur.execute('SELECT stock, amount, price, name, currency from Purchases WHERE user=?', (username,)):
@@ -141,6 +145,13 @@ def getValueText(username):
         if currencies[key] == 'EUR':
             totalprofit += profit
             totalvalue += value
+            d1totalvalue += stockAmount[key] * liveprices[-2]
+            d7totalvalue += stockAmount[key] * liveprices[-6]
+            d30totalvalue += stockAmount[key] * liveprices[0]
+
+            d1totalprofit += (stockAmount[key] * liveprices[-2]) - stockBuyPrice[key]
+            d7totalprofit += (stockAmount[key] * liveprices[-6]) - stockBuyPrice[key]
+            d30totalprofit += (stockAmount[key] * liveprices[0]) - stockBuyPrice[key]
         else:
             ratename = currencies[key]+'EUR=X'
             if currencies[key] == 'USD':
@@ -151,13 +162,31 @@ def getValueText(username):
             print(liverate)
             totalprofit += profit * liverate
             totalvalue += value * liverate
+            d1totalvalue += stockAmount[key] * liveprices[-2] * liverate
+            d7totalvalue += stockAmount[key] * liveprices[-6] * liverate
+            d30totalvalue += stockAmount[key] * liveprices[0] * liverate
+
+            d1totalprofit += ((stockAmount[key] * liveprices[-2]) - stockBuyPrice[key]) * liverate
+            d7totalprofit += ((stockAmount[key] * liveprices[-6]) - stockBuyPrice[key]) * liverate
+            d30totalprofit += ((stockAmount[key] * liveprices[0]) - stockBuyPrice[key]) * liverate
+
             value *= liverate
             profit *= liverate
         text += '{:17s} {:<10.2f} {:<10.2f} {:<10.2f} {:<10s} {:<10s} {:<10s} {:<10.2f}\n'.format(names[key], stockAmount[key], stockBuyPrice[key]*liverate, value, str(d1price)+'%', str(d7price)+'%', str(d30price)+'%', profit)
+    if len(stockAmount) == 0:
+        return 'Et ole merkinnyt yhtään osaketta!'
+    else:
+        d1totalc = round(((totalvalue / d1totalvalue) - 1)*100, 2)
+        d7totalc = round(((totalvalue / d7totalvalue) - 1)*100, 2)
+        d30totalc = round(((totalvalue / d30totalvalue) - 1)*100, 2)
+        text += '{:50s} {:<10s} {:<10s} {:<10s}\n'.format('Nykyarvo yhteensä ' + str(round(totalvalue,2)) + ' €', str(d1totalc)+'%', str(d7totalc)+'%', str(d30totalc)+'%')
 
-    text += 'Nykyarvo yhteensä {:.2f} EUR\n'.format(totalvalue)
-    text += 'Voittoa {:.2f} EUR'.format(totalprofit)
-    return text
+
+        d1totalp = round(totalprofit - d1totalprofit, 2)
+        d7totalp = round(totalprofit - d7totalprofit, 2)
+        d30totalp = round(totalprofit - d30totalprofit, 2)
+        text += '{:50s} {:<10s} {:<10s} {:<10s}\n'.format('Voittoa ' + str(round(totalprofit,2)) + ' €', str(d1totalp)+'€', str(d7totalp)+'€', str(d30totalp)+'€')
+        return text
 
 def isValidStock(name):
     try:
