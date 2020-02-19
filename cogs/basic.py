@@ -50,9 +50,12 @@ class Basic(commands.Cog):
     )
     async def value_command(self, ctx):
         username = str(ctx.message.author)
-        text = getValueText(username)
-        message = await ctx.send(content='```'+text+'```')
-        setUserMessage(username, message)
+        success, text = getValueText(username)
+        if success:
+            message = await ctx.send(content='```'+text+'```')
+            setUserMessage(username, message)
+        else:
+            message = await ctx.send(content=text)
 
     async def updatevalue(self):
         await self.bot.wait_until_ready()
@@ -66,10 +69,12 @@ class Basic(commands.Cog):
 
     async def updateUserValue(self, username, messageid, channelid):
         message = await self.bot.get_channel(int(channelid)).fetch_message(int(messageid))
-        text = getValueText(username)
+        success, text = getValueText(username)
         print("Updating for",username)
-        await message.edit(content='```'+text+'```')
-
+        if success:
+            await message.edit(content='```'+text+'```')
+        else:
+            await message.edit(content=message.content+'\nViimeisin päivitys epäonnistui.')
 
     # Define a new command
     @commands.command(
@@ -126,6 +131,15 @@ def setUserMessage(username, message):
 
 
 def getValueText(username):
+    try:
+        text = getValueText2(username)
+        return True, text
+    except:
+        # Gotta catch 'em all!
+        print("Error happened...")
+        return False, "Virhe osakedatan hakemisessa. Yritä myöhemmin uudelleen."
+
+def getValueText2(username):
     stockAmount = {}
     stockBuyPrice = {}
     names = {}
